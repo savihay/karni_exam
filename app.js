@@ -214,6 +214,16 @@
   let currentSubject = null;
   let currentScreen = "subjects"; // "subjects" | "chapters" | "quiz" | "results"
 
+  // Wrap arithmetic expressions in LTR isolates (U+2066 ... U+2069) so that
+  // operators like ×, ÷, +, −, = render in their natural left-to-right order
+  // inside an RTL Hebrew line. Match runs of digits and math punctuation that
+  // contain at least one operator, bookended by digits.
+  const MATH_RE = /\d[\d\s+\-−×÷*\/=.,()]*[+\-−×÷*\/=][\d\s+\-−×÷*\/=.,()]*\d/g;
+  function formatMath(text) {
+    if (!text) return text;
+    return text.replace(MATH_RE, function (m) { return "⁦" + m + "⁩"; });
+  }
+
   function shuffle(arr) {
     const out = arr.slice();
     for (let i = out.length - 1; i > 0; i--) {
@@ -360,7 +370,7 @@
     const optsWithMeta = q.options.map((text, i) => ({ text, isCorrect: i === q.correct }));
     const shuffledOpts = shuffle(optsWithMeta);
 
-    els.pair.textContent = q.pair;
+    els.pair.textContent = formatMath(q.pair);
     els.pair.classList.toggle("paragraph", currentSubject.type !== "relations");
     els.promptLabel.textContent = currentSubject.promptLabel;
     els.options.innerHTML = "";
@@ -372,7 +382,7 @@
       btn.innerHTML =
         '<span class="letter">' + HEB_LETTERS[i] + '.</span>' +
         '<span class="opt-text"></span>';
-      btn.querySelector(".opt-text").textContent = opt.text;
+      btn.querySelector(".opt-text").textContent = formatMath(opt.text);
       btn.addEventListener("click", function () {
         onAnswer(btn, opt.isCorrect, opt.text, q);
       });
@@ -387,10 +397,11 @@
     answered = true;
 
     const buttons = els.options.querySelectorAll(".option");
+    const correctText = formatMath(question.options[question.correct]);
     buttons.forEach(function (b) {
       b.disabled = true;
       const txt = b.querySelector(".opt-text").textContent;
-      if (txt === question.options[question.correct]) {
+      if (txt === correctText) {
         b.classList.add("correct");
       }
     });
@@ -411,12 +422,12 @@
     const fbPairRow = els.fbPair.parentElement;
     if (currentSubject.type === "relations") {
       fbPairRow.classList.remove("hidden");
-      els.fbPair.textContent = question.pair;
+      els.fbPair.textContent = formatMath(question.pair);
     } else {
       fbPairRow.classList.add("hidden");
     }
-    els.fbCorrect.textContent = question.options[question.correct];
-    els.explanation.textContent = question.explanation;
+    els.fbCorrect.textContent = formatMath(question.options[question.correct]);
+    els.explanation.textContent = formatMath(question.explanation);
     els.feedback.classList.remove("hidden");
     els.feedback.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
