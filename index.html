@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#4a6cf7" />
+  <title>תרגול יחסי מילים – מבחני מחוננים</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="topbar-row">
+        <h1>יחסי מילים</h1>
+        <button id="restart-btn" class="icon-btn" title="התחל מחדש" aria-label="התחל מחדש">↻</button>
+      </div>
+      <div class="stats">
+        <span id="progress">שאלה 1 מתוך 80</span><!-- ערך חי מוחלף ע״י app.js -->
+        <span id="score">ניקוד: 0</span>
+      </div>
+      <div class="progress-bar"><div id="progress-fill"></div></div>
+    </header>
+
+    <main id="quiz-screen">
+      <div id="question-card" class="card">
+        <div class="prompt-label">מצא את הזוג בעל היחס הדומה:</div>
+        <div id="pair" class="pair"></div>
+        <div id="options" class="options"></div>
+      </div>
+
+      <div id="feedback" class="feedback hidden">
+        <div id="feedback-title" class="feedback-title"></div>
+        <div class="feedback-body">
+          <div class="feedback-row"><span class="lbl">הזוג:</span> <span id="fb-pair"></span></div>
+          <div class="feedback-row"><span class="lbl">התשובה הנכונה:</span> <span id="fb-correct"></span></div>
+          <div class="explanation" id="explanation"></div>
+        </div>
+        <button id="next-btn" class="primary-btn">השאלה הבאה ←</button>
+      </div>
+    </main>
+
+    <section id="results-screen" class="hidden">
+      <div class="card results">
+        <h2>סיימת! 🎉</h2>
+        <div id="final-score" class="final-score"></div>
+        <div id="final-msg" class="final-msg"></div>
+        <button id="play-again" class="primary-btn">סבב חדש</button>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>תרגול לקראת שלב ב׳ – כיתות ג׳</span>
+    </footer>
+  </div>
+
+  <script src="questions.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
