@@ -146,6 +146,21 @@ main {
   letter-spacing: 0.5px;
 }
 
+.pair.paragraph {
+  font-size: 1.05rem;
+  font-weight: 500;
+  text-align: right;
+  padding: 16px 14px;
+  letter-spacing: normal;
+  line-height: 1.75;
+  color: #1f2937;
+  background: #eef2ff;
+}
+
+@media (min-width: 520px) {
+  .pair.paragraph { font-size: 1.12rem; }
+}
+
 .options {
   display: flex;
   flex-direction: column;

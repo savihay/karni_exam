@@ -17,6 +17,7 @@
     nextBtn: document.getElementById("next-btn"),
     backBtn: document.getElementById("back-btn"),
     muteBtn: document.getElementById("mute-btn"),
+    promptLabel: document.getElementById("prompt-label"),
     topbar: document.querySelector(".topbar"),
     topbarTitle: document.getElementById("topbar-title"),
     subjectsScreen: document.getElementById("subjects-screen"),
@@ -55,8 +56,30 @@
       title: "יחסי מילים",
       description: "מציאת הקשר הלוגי בין זוגות מילים",
       icon: "🔤",
+      type: "relations",
+      promptLabel: "מצא את הזוג בעל היחס הדומה:",
       questions: QUESTIONS,
       chapters: buildChapters(QUESTIONS),
+    },
+    {
+      id: "baayot-milulot",
+      title: "חשיבה כמותית ובעיות מילוליות",
+      description: "פתרון בעיות חשבון בסיפור",
+      icon: "🧮",
+      type: "paragraph",
+      promptLabel: "קרא בעיון ופתור את הבעיה:",
+      questions: WORD_PROBLEMS,
+      chapters: buildChapters(WORD_PROBLEMS),
+    },
+    {
+      id: "hashlamat-mishpatim",
+      title: "השלמת משפטים בעברית",
+      description: "השלמת המילה החסרה לפי ההקשר",
+      icon: "📝",
+      type: "paragraph",
+      promptLabel: "השלם את המשפט במילה המתאימה ביותר:",
+      questions: SENTENCE_COMPLETION,
+      chapters: buildChapters(SENTENCE_COMPLETION),
     },
   ];
 
@@ -69,7 +92,14 @@
     }
   }
   function saveAllProgress(p) {
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
+    try {
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
+      return true;
+    } catch (e) {
+      // localStorage may be unavailable (private mode) or full.
+      console.warn("Failed to save progress:", e);
+      return false;
+    }
   }
   function loadProgress(subjectId) {
     return loadAllProgress()[subjectId] || {};
@@ -331,6 +361,8 @@
     const shuffledOpts = shuffle(optsWithMeta);
 
     els.pair.textContent = q.pair;
+    els.pair.classList.toggle("paragraph", currentSubject.type !== "relations");
+    els.promptLabel.textContent = currentSubject.promptLabel;
     els.options.innerHTML = "";
 
     shuffledOpts.forEach((opt, i) => {
@@ -376,7 +408,13 @@
       audio.wrong();
     }
 
-    els.fbPair.textContent = question.pair;
+    const fbPairRow = els.fbPair.parentElement;
+    if (currentSubject.type === "relations") {
+      fbPairRow.classList.remove("hidden");
+      els.fbPair.textContent = question.pair;
+    } else {
+      fbPairRow.classList.add("hidden");
+    }
     els.fbCorrect.textContent = question.options[question.correct];
     els.explanation.textContent = question.explanation;
     els.feedback.classList.remove("hidden");
@@ -434,7 +472,7 @@
 
   function encouragement(pct) {
     if (pct === 100) return "מושלם! איזה מבחן ענק עברת בהצלחה.";
-    if (pct >= 90) return "מצוין! שליטה מרשימה ביחסי מילים.";
+    if (pct >= 90) return "מצוין! שליטה מרשימה בנושא.";
     if (pct >= 75) return "כל הכבוד! המשך לתרגל ותגיע למצוין.";
     if (pct >= 50) return "יפה מאוד. שווה לחזור על השאלות שטעית בהן.";
     return "אל תוותר – כל סבב הוא תרגול שמקדם.";
