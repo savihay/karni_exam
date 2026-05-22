@@ -264,71 +264,147 @@ main {
 .primary-btn:hover { background: var(--primary-dark); }
 .primary-btn:active { transform: scale(0.985); }
 
-/* ─── Home / size picker ────────────────────────── */
+/* ─── Home / chapter list ────────────────────────── */
 .home {
-  text-align: center;
   padding: 22px 18px;
 }
 .home h2 {
   margin: 0 0 6px;
   font-size: 1.35rem;
   color: var(--text);
+  text-align: center;
 }
 .home-sub {
   margin: 0 0 18px;
   color: var(--muted);
   font-size: 0.95rem;
+  text-align: center;
 }
 
-.size-picker {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.chapter-list {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
 }
 
-.size-btn {
+.chapter-btn {
   font-family: inherit;
   background: #ffffff;
   border: 2px solid var(--border);
   border-radius: 14px;
-  padding: 16px 10px;
+  padding: 14px 14px;
   cursor: pointer;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 12px;
   transition: all 0.15s;
+  text-align: right;
 }
-.size-btn:hover { border-color: var(--primary); }
-.size-btn:active { transform: scale(0.98); }
+.chapter-btn:hover { border-color: var(--primary); }
+.chapter-btn:active { transform: scale(0.99); }
 
-.size-btn .size-num {
-  font-size: 1.6rem;
-  font-weight: 900;
+.chapter-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #eef2ff;
   color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1rem;
+  flex-shrink: 0;
 }
-.size-btn .size-label {
+
+.chapter-info {
+  flex: 1;
+  min-width: 0;
+}
+.chapter-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--text);
+}
+.chapter-meta {
   font-size: 0.82rem;
   color: var(--muted);
-  font-weight: 500;
+  margin-top: 2px;
 }
 
-.size-btn.recommended {
+.chapter-action {
+  font-size: 0.9rem;
+  color: var(--primary);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.chapter-btn.completed {
+  background: #f0fdf4;
+  border-color: var(--success);
+}
+.chapter-btn.completed .chapter-icon {
+  background: var(--success);
+  color: #fff;
+}
+.chapter-btn.completed .chapter-action {
+  color: var(--success);
+}
+
+.chapter-btn.next-up {
   border-color: var(--primary);
   background: #eef2ff;
   position: relative;
 }
-.size-btn.recommended::after {
-  content: "מומלץ";
+.chapter-btn.next-up::after {
+  content: "המשך";
   position: absolute;
   top: -10px;
+  inset-inline-end: 14px;
   background: var(--primary);
   color: #fff;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 8px;
 }
+
+.home-footer {
+  margin-top: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+.overall-progress { color: var(--muted); }
+
+.text-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  padding: 4px 6px;
+}
+.text-btn:hover { color: var(--danger); }
+
+.secondary-btn {
+  width: 100%;
+  margin-top: 8px;
+  background: #ffffff;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.secondary-btn:hover { background: #eef2ff; }
 
 .topbar.home-mode .stats,
 .topbar.home-mode .progress-bar {

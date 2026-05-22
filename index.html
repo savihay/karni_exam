@@ -29,25 +29,12 @@
 
     <section id="home-screen">
       <div class="card home">
-        <h2>בחר אורך סבב</h2>
-        <p class="home-sub">בכל סבב יוגרלו שאלות חדשות מתוך מאגר של 80.</p>
-        <div class="size-picker">
-          <button class="size-btn" data-size="10">
-            <span class="size-num">10</span>
-            <span class="size-label">סבב קצר · ~3 דק׳</span>
-          </button>
-          <button class="size-btn recommended" data-size="20">
-            <span class="size-num">20</span>
-            <span class="size-label">סבב מומלץ · ~6 דק׳</span>
-          </button>
-          <button class="size-btn" data-size="40">
-            <span class="size-num">40</span>
-            <span class="size-label">סבב מורחב · ~12 דק׳</span>
-          </button>
-          <button class="size-btn" data-size="80">
-            <span class="size-num">80</span>
-            <span class="size-label">כל המאגר · ~25 דק׳</span>
-          </button>
+        <h2>יחסי מילים</h2>
+        <p class="home-sub">בחר פרק להתחלה. בכל פרק 10 שאלות.</p>
+        <div id="chapter-list" class="chapter-list"></div>
+        <div class="home-footer">
+          <span id="overall-progress" class="overall-progress"></span>
+          <button id="reset-btn" class="text-btn" type="button">איפוס התקדמות</button>
         </div>
       </div>
     </section>
@@ -72,10 +59,11 @@
 
     <section id="results-screen" class="hidden">
       <div class="card results">
-        <h2>סיימת! 🎉</h2>
+        <h2 id="results-title">סיימת את הפרק! 🎉</h2>
         <div id="final-score" class="final-score"></div>
         <div id="final-msg" class="final-msg"></div>
-        <button id="play-again" class="primary-btn">סבב חדש</button>
+        <button id="next-chapter-btn" class="primary-btn hidden">לפרק הבא ←</button>
+        <button id="play-again" class="secondary-btn">חזרה לרשימת הפרקים</button>
       </div>
     </section>
 

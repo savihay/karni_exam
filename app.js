@@ -19,13 +19,57 @@
     muteBtn: document.getElementById("mute-btn"),
     topbar: document.querySelector(".topbar"),
     homeScreen: document.getElementById("home-screen"),
-    sizeButtons: document.querySelectorAll(".size-btn"),
+    chapterList: document.getElementById("chapter-list"),
+    overallProgress: document.getElementById("overall-progress"),
+    resetBtn: document.getElementById("reset-btn"),
     quizScreen: document.getElementById("quiz-screen"),
     resultsScreen: document.getElementById("results-screen"),
+    resultsTitle: document.getElementById("results-title"),
     finalScore: document.getElementById("final-score"),
     finalMsg: document.getElementById("final-msg"),
+    nextChapterBtn: document.getElementById("next-chapter-btn"),
     playAgain: document.getElementById("play-again"),
   };
+
+  // ─── Chapters ─────────────────────────────────────
+  const CHAPTER_SIZE = 10;
+  const CHAPTERS = [];
+  for (let i = 0; i < QUESTIONS.length; i += CHAPTER_SIZE) {
+    CHAPTERS.push({
+      index: CHAPTERS.length,
+      title: "פרק " + (CHAPTERS.length + 1),
+      questionIndices: QUESTIONS.map((_, j) => j).slice(i, i + CHAPTER_SIZE),
+    });
+  }
+
+  const PROGRESS_KEY = "karni_chapter_progress";
+  function loadProgress() {
+    try {
+      return JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
+    } catch (e) {
+      return {};
+    }
+  }
+  function saveProgress(p) {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
+  }
+  function markCompleted(chapterIdx, score, total) {
+    const p = loadProgress();
+    const prev = p[chapterIdx];
+    const best = prev ? Math.max(prev.bestScore, score) : score;
+    p[chapterIdx] = { bestScore: best, lastScore: score, total: total, completedAt: Date.now() };
+    saveProgress(p);
+  }
+  function clearProgress() {
+    localStorage.removeItem(PROGRESS_KEY);
+  }
+  function firstIncompleteChapter() {
+    const p = loadProgress();
+    for (let i = 0; i < CHAPTERS.length; i++) {
+      if (!p[i]) return i;
+    }
+    return -1;
+  }
 
   // ─── Audio engine (Web Audio API, no external files) ────────
   const audio = (function () {
@@ -97,7 +141,8 @@
   let idx = 0;
   let score = 0;
   let answered = false;
-  let sessionSize = 20;
+  let sessionSize = CHAPTER_SIZE;
+  let currentChapter = 0;
 
   function shuffle(arr) {
     const out = arr.slice();
@@ -109,6 +154,7 @@
   }
 
   function showHome() {
+    renderChapterList();
     els.quizScreen.classList.add("hidden");
     els.resultsScreen.classList.add("hidden");
     els.homeScreen.classList.remove("hidden");
@@ -116,10 +162,58 @@
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function startSession(size) {
-    sessionSize = Math.min(size, QUESTIONS.length);
-    const allShuffled = shuffle(QUESTIONS.map((_, i) => i));
-    order = allShuffled.slice(0, sessionSize);
+  function renderChapterList() {
+    const p = loadProgress();
+    const nextIdx = firstIncompleteChapter();
+    els.chapterList.innerHTML = "";
+
+    CHAPTERS.forEach(function (ch) {
+      const completed = !!p[ch.index];
+      const isNext = ch.index === nextIdx;
+      const btn = document.createElement("button");
+      btn.className = "chapter-btn";
+      btn.type = "button";
+      if (completed) btn.classList.add("completed");
+      if (isNext) btn.classList.add("next-up");
+
+      const icon = completed ? "✓" : String(ch.index + 1);
+      let meta;
+      if (completed) {
+        meta = "הושלם · ניקוד שיא " + p[ch.index].bestScore + "/" + p[ch.index].total;
+      } else {
+        meta = ch.questionIndices.length + " שאלות";
+      }
+      const actionText = completed ? "תרגול חוזר" : (isNext ? "התחל" : "התחל");
+
+      btn.innerHTML =
+        '<span class="chapter-icon"></span>' +
+        '<span class="chapter-info">' +
+          '<span class="chapter-title"></span>' +
+          '<span class="chapter-meta"></span>' +
+        '</span>' +
+        '<span class="chapter-action"></span>';
+      btn.querySelector(".chapter-icon").textContent = icon;
+      btn.querySelector(".chapter-title").textContent = ch.title;
+      btn.querySelector(".chapter-meta").textContent = meta;
+      btn.querySelector(".chapter-action").textContent = actionText + " ←";
+
+      btn.addEventListener("click", function () {
+        audio.unlock();
+        startChapter(ch.index);
+      });
+      els.chapterList.appendChild(btn);
+    });
+
+    const completedCount = Object.keys(p).length;
+    els.overallProgress.textContent =
+      "השלמת " + completedCount + " מתוך " + CHAPTERS.length + " פרקים";
+  }
+
+  function startChapter(chapterIdx) {
+    currentChapter = chapterIdx;
+    const ch = CHAPTERS[chapterIdx];
+    order = shuffle(ch.questionIndices.slice());
+    sessionSize = order.length;
     idx = 0;
     score = 0;
     answered = false;
@@ -212,11 +306,25 @@
   }
 
   function showResults() {
+    markCompleted(currentChapter, score, sessionSize);
+
     els.quizScreen.classList.add("hidden");
     els.resultsScreen.classList.remove("hidden");
     const pct = Math.round((score / sessionSize) * 100);
+    els.resultsTitle.textContent = "סיימת את " + CHAPTERS[currentChapter].title + "! 🎉";
     els.finalScore.textContent = score + " / " + sessionSize + "  (" + pct + "%)";
     els.finalMsg.textContent = encouragement(pct);
+
+    const nextIdx = firstIncompleteChapter();
+    if (nextIdx !== -1) {
+      els.nextChapterBtn.textContent = "לפרק הבא ← (" + CHAPTERS[nextIdx].title + ")";
+      els.nextChapterBtn.dataset.next = String(nextIdx);
+      els.nextChapterBtn.classList.remove("hidden");
+    } else {
+      els.nextChapterBtn.classList.add("hidden");
+      els.finalMsg.textContent = "כל הכבוד! סיימת את כל הפרקים. " + els.finalMsg.textContent;
+    }
+
     audio.finish();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -233,12 +341,16 @@
   els.restartBtn.addEventListener("click", showHome);
   els.playAgain.addEventListener("click", showHome);
 
-  els.sizeButtons.forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      const size = parseInt(btn.dataset.size, 10);
-      audio.unlock();
-      startSession(size);
-    });
+  els.nextChapterBtn.addEventListener("click", function () {
+    const next = parseInt(els.nextChapterBtn.dataset.next, 10);
+    if (!Number.isNaN(next)) startChapter(next);
+  });
+
+  els.resetBtn.addEventListener("click", function () {
+    if (confirm("לאפס את כל ההתקדמות? כל הפרקים יסומנו כלא הושלמו.")) {
+      clearProgress();
+      renderChapterList();
+    }
   });
 
   els.muteBtn.addEventListener("click", function () {
