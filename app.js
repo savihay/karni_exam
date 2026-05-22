@@ -17,6 +17,9 @@
     nextBtn: document.getElementById("next-btn"),
     restartBtn: document.getElementById("restart-btn"),
     muteBtn: document.getElementById("mute-btn"),
+    topbar: document.querySelector(".topbar"),
+    homeScreen: document.getElementById("home-screen"),
+    sizeButtons: document.querySelectorAll(".size-btn"),
     quizScreen: document.getElementById("quiz-screen"),
     resultsScreen: document.getElementById("results-screen"),
     finalScore: document.getElementById("final-score"),
@@ -94,6 +97,7 @@
   let idx = 0;
   let score = 0;
   let answered = false;
+  let sessionSize = 20;
 
   function shuffle(arr) {
     const out = arr.slice();
@@ -104,13 +108,25 @@
     return out;
   }
 
-  function start() {
-    order = shuffle(QUESTIONS.map((_, i) => i));
+  function showHome() {
+    els.quizScreen.classList.add("hidden");
+    els.resultsScreen.classList.add("hidden");
+    els.homeScreen.classList.remove("hidden");
+    els.topbar.classList.add("home-mode");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function startSession(size) {
+    sessionSize = Math.min(size, QUESTIONS.length);
+    const allShuffled = shuffle(QUESTIONS.map((_, i) => i));
+    order = allShuffled.slice(0, sessionSize);
     idx = 0;
     score = 0;
     answered = false;
+    els.homeScreen.classList.add("hidden");
     els.resultsScreen.classList.add("hidden");
     els.quizScreen.classList.remove("hidden");
+    els.topbar.classList.remove("home-mode");
     renderQuestion();
   }
 
@@ -179,15 +195,15 @@
   }
 
   function updateStats() {
-    els.progress.textContent = "שאלה " + (idx + 1) + " מתוך " + QUESTIONS.length;
+    els.progress.textContent = "שאלה " + (idx + 1) + " מתוך " + sessionSize;
     els.score.textContent = "ניקוד: " + score;
-    const pct = ((idx + (answered ? 1 : 0)) / QUESTIONS.length) * 100;
+    const pct = ((idx + (answered ? 1 : 0)) / sessionSize) * 100;
     els.progressFill.style.width = pct + "%";
   }
 
   function nextQuestion() {
     idx++;
-    if (idx >= QUESTIONS.length) {
+    if (idx >= sessionSize) {
       showResults();
       return;
     }
@@ -198,8 +214,8 @@
   function showResults() {
     els.quizScreen.classList.add("hidden");
     els.resultsScreen.classList.remove("hidden");
-    const pct = Math.round((score / QUESTIONS.length) * 100);
-    els.finalScore.textContent = score + " / " + QUESTIONS.length + "  (" + pct + "%)";
+    const pct = Math.round((score / sessionSize) * 100);
+    els.finalScore.textContent = score + " / " + sessionSize + "  (" + pct + "%)";
     els.finalMsg.textContent = encouragement(pct);
     audio.finish();
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -214,8 +230,16 @@
   }
 
   els.nextBtn.addEventListener("click", nextQuestion);
-  els.restartBtn.addEventListener("click", start);
-  els.playAgain.addEventListener("click", start);
+  els.restartBtn.addEventListener("click", showHome);
+  els.playAgain.addEventListener("click", showHome);
+
+  els.sizeButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      const size = parseInt(btn.dataset.size, 10);
+      audio.unlock();
+      startSession(size);
+    });
+  });
 
   els.muteBtn.addEventListener("click", function () {
     audio.setEnabled(!audio.isEnabled());
@@ -233,5 +257,5 @@
   }, { once: true });
 
   refreshMuteBtn();
-  start();
+  showHome();
 })();

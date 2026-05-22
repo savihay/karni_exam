@@ -27,7 +27,32 @@
       <div class="progress-bar"><div id="progress-fill"></div></div>
     </header>
 
-    <main id="quiz-screen">
+    <section id="home-screen">
+      <div class="card home">
+        <h2>בחר אורך סבב</h2>
+        <p class="home-sub">בכל סבב יוגרלו שאלות חדשות מתוך מאגר של 80.</p>
+        <div class="size-picker">
+          <button class="size-btn" data-size="10">
+            <span class="size-num">10</span>
+            <span class="size-label">סבב קצר · ~3 דק׳</span>
+          </button>
+          <button class="size-btn recommended" data-size="20">
+            <span class="size-num">20</span>
+            <span class="size-label">סבב מומלץ · ~6 דק׳</span>
+          </button>
+          <button class="size-btn" data-size="40">
+            <span class="size-num">40</span>
+            <span class="size-label">סבב מורחב · ~12 דק׳</span>
+          </button>
+          <button class="size-btn" data-size="80">
+            <span class="size-num">80</span>
+            <span class="size-label">כל המאגר · ~25 דק׳</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <main id="quiz-screen" class="hidden">
       <div id="question-card" class="card">
         <div class="prompt-label">מצא את הזוג בעל היחס הדומה:</div>
         <div id="pair" class="pair"></div>
