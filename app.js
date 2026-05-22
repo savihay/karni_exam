@@ -15,10 +15,14 @@
     fbCorrect: document.getElementById("fb-correct"),
     explanation: document.getElementById("explanation"),
     nextBtn: document.getElementById("next-btn"),
-    restartBtn: document.getElementById("restart-btn"),
+    backBtn: document.getElementById("back-btn"),
     muteBtn: document.getElementById("mute-btn"),
     topbar: document.querySelector(".topbar"),
+    topbarTitle: document.getElementById("topbar-title"),
+    subjectsScreen: document.getElementById("subjects-screen"),
+    subjectList: document.getElementById("subject-list"),
     homeScreen: document.getElementById("home-screen"),
+    chaptersTitle: document.getElementById("chapters-title"),
     chapterList: document.getElementById("chapter-list"),
     overallProgress: document.getElementById("overall-progress"),
     resetBtn: document.getElementById("reset-btn"),
@@ -31,45 +35,79 @@
     playAgain: document.getElementById("play-again"),
   };
 
-  // ─── Chapters ─────────────────────────────────────
+  // ─── Subjects & chapters ─────────────────────────────
   const CHAPTER_SIZE = 10;
-  const CHAPTERS = [];
-  for (let i = 0; i < QUESTIONS.length; i += CHAPTER_SIZE) {
-    CHAPTERS.push({
-      index: CHAPTERS.length,
-      title: "פרק " + (CHAPTERS.length + 1),
-      questionIndices: QUESTIONS.map((_, j) => j).slice(i, i + CHAPTER_SIZE),
-    });
+  function buildChapters(questions) {
+    const out = [];
+    for (let i = 0; i < questions.length; i += CHAPTER_SIZE) {
+      out.push({
+        index: out.length,
+        title: "פרק " + (out.length + 1),
+        questionIndices: questions.map((_, j) => j).slice(i, i + CHAPTER_SIZE),
+      });
+    }
+    return out;
   }
 
-  const PROGRESS_KEY = "karni_chapter_progress";
-  function loadProgress() {
+  const SUBJECTS = [
+    {
+      id: "yachasei-milim",
+      title: "יחסי מילים",
+      description: "מציאת הקשר הלוגי בין זוגות מילים",
+      icon: "🔤",
+      questions: QUESTIONS,
+      chapters: buildChapters(QUESTIONS),
+    },
+  ];
+
+  const PROGRESS_KEY = "karni_subject_progress";
+  function loadAllProgress() {
     try {
       return JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
     } catch (e) {
       return {};
     }
   }
-  function saveProgress(p) {
+  function saveAllProgress(p) {
     localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
   }
-  function markCompleted(chapterIdx, score, total) {
-    const p = loadProgress();
-    const prev = p[chapterIdx];
+  function loadProgress(subjectId) {
+    return loadAllProgress()[subjectId] || {};
+  }
+  function markCompleted(subjectId, chapterIdx, score, total) {
+    const all = loadAllProgress();
+    const subj = all[subjectId] || {};
+    const prev = subj[chapterIdx];
     const best = prev ? Math.max(prev.bestScore, score) : score;
-    p[chapterIdx] = { bestScore: best, lastScore: score, total: total, completedAt: Date.now() };
-    saveProgress(p);
+    subj[chapterIdx] = { bestScore: best, lastScore: score, total: total, completedAt: Date.now() };
+    all[subjectId] = subj;
+    saveAllProgress(all);
   }
-  function clearProgress() {
-    localStorage.removeItem(PROGRESS_KEY);
+  function clearSubjectProgress(subjectId) {
+    const all = loadAllProgress();
+    delete all[subjectId];
+    saveAllProgress(all);
   }
-  function firstIncompleteChapter() {
-    const p = loadProgress();
-    for (let i = 0; i < CHAPTERS.length; i++) {
+  function firstIncompleteChapter(subject) {
+    const p = loadProgress(subject.id);
+    for (let i = 0; i < subject.chapters.length; i++) {
       if (!p[i]) return i;
     }
     return -1;
   }
+
+  // Migrate older single-subject progress key if present.
+  (function migrateLegacyProgress() {
+    const LEGACY = "karni_chapter_progress";
+    const legacy = localStorage.getItem(LEGACY);
+    if (legacy && !localStorage.getItem(PROGRESS_KEY)) {
+      try {
+        const parsed = JSON.parse(legacy);
+        saveAllProgress({ "yachasei-milim": parsed });
+      } catch (e) { /* ignore */ }
+    }
+    if (legacy) localStorage.removeItem(LEGACY);
+  })();
 
   // ─── Audio engine (Web Audio API, no external files) ────────
   const audio = (function () {
@@ -143,6 +181,8 @@
   let answered = false;
   let sessionSize = CHAPTER_SIZE;
   let currentChapter = 0;
+  let currentSubject = null;
+  let currentScreen = "subjects"; // "subjects" | "chapters" | "quiz" | "results"
 
   function shuffle(arr) {
     const out = arr.slice();
@@ -153,21 +193,76 @@
     return out;
   }
 
-  function showHome() {
-    renderChapterList();
+  function hideAllScreens() {
+    els.subjectsScreen.classList.add("hidden");
+    els.homeScreen.classList.add("hidden");
     els.quizScreen.classList.add("hidden");
     els.resultsScreen.classList.add("hidden");
+  }
+
+  function showSubjects() {
+    currentScreen = "subjects";
+    currentSubject = null;
+    renderSubjectList();
+    hideAllScreens();
+    els.subjectsScreen.classList.remove("hidden");
+    els.topbar.classList.add("home-mode");
+    els.topbarTitle.textContent = "תרגול מחוננים";
+    els.backBtn.classList.add("hidden");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function renderSubjectList() {
+    els.subjectList.innerHTML = "";
+    SUBJECTS.forEach(function (s) {
+      const p = loadProgress(s.id);
+      const completedCount = Object.keys(p).length;
+      const btn = document.createElement("button");
+      btn.className = "subject-btn";
+      btn.type = "button";
+
+      btn.innerHTML =
+        '<span class="subject-icon"></span>' +
+        '<span class="subject-info">' +
+          '<span class="subject-title"></span>' +
+          '<span class="subject-desc"></span>' +
+          '<span class="subject-status"></span>' +
+        '</span>' +
+        '<span class="subject-action">←</span>';
+      btn.querySelector(".subject-icon").textContent = s.icon;
+      btn.querySelector(".subject-title").textContent = s.title;
+      btn.querySelector(".subject-desc").textContent = s.description;
+      btn.querySelector(".subject-status").textContent =
+        completedCount + " / " + s.chapters.length + " פרקים הושלמו";
+
+      btn.addEventListener("click", function () {
+        audio.unlock();
+        showChapters(s);
+      });
+      els.subjectList.appendChild(btn);
+    });
+  }
+
+  function showChapters(subject) {
+    currentSubject = subject;
+    currentScreen = "chapters";
+    renderChapterList();
+    hideAllScreens();
     els.homeScreen.classList.remove("hidden");
     els.topbar.classList.add("home-mode");
+    els.topbarTitle.textContent = subject.title;
+    els.backBtn.classList.remove("hidden");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function renderChapterList() {
-    const p = loadProgress();
-    const nextIdx = firstIncompleteChapter();
+    const subject = currentSubject;
+    const p = loadProgress(subject.id);
+    const nextIdx = firstIncompleteChapter(subject);
+    els.chaptersTitle.textContent = subject.title;
     els.chapterList.innerHTML = "";
 
-    CHAPTERS.forEach(function (ch) {
+    subject.chapters.forEach(function (ch) {
       const completed = !!p[ch.index];
       const isNext = ch.index === nextIdx;
       const btn = document.createElement("button");
@@ -183,7 +278,7 @@
       } else {
         meta = ch.questionIndices.length + " שאלות";
       }
-      const actionText = completed ? "תרגול חוזר" : (isNext ? "התחל" : "התחל");
+      const actionText = completed ? "תרגול חוזר" : "התחל";
 
       btn.innerHTML =
         '<span class="chapter-icon"></span>' +
@@ -206,28 +301,30 @@
 
     const completedCount = Object.keys(p).length;
     els.overallProgress.textContent =
-      "השלמת " + completedCount + " מתוך " + CHAPTERS.length + " פרקים";
+      "השלמת " + completedCount + " מתוך " + subject.chapters.length + " פרקים";
   }
 
   function startChapter(chapterIdx) {
     currentChapter = chapterIdx;
-    const ch = CHAPTERS[chapterIdx];
+    currentScreen = "quiz";
+    const ch = currentSubject.chapters[chapterIdx];
     order = shuffle(ch.questionIndices.slice());
     sessionSize = order.length;
     idx = 0;
     score = 0;
     answered = false;
-    els.homeScreen.classList.add("hidden");
-    els.resultsScreen.classList.add("hidden");
+    hideAllScreens();
     els.quizScreen.classList.remove("hidden");
     els.topbar.classList.remove("home-mode");
+    els.topbarTitle.textContent = currentSubject.title;
+    els.backBtn.classList.remove("hidden");
     renderQuestion();
   }
 
   function renderQuestion() {
     answered = false;
     els.feedback.classList.add("hidden");
-    const q = QUESTIONS[order[idx]];
+    const q = currentSubject.questions[order[idx]];
 
     // Shuffle options but remember which one is correct.
     const optsWithMeta = q.options.map((text, i) => ({ text, isCorrect: i === q.correct }));
@@ -306,18 +403,24 @@
   }
 
   function showResults() {
-    markCompleted(currentChapter, score, sessionSize);
+    markCompleted(currentSubject.id, currentChapter, score, sessionSize);
+    currentScreen = "results";
 
-    els.quizScreen.classList.add("hidden");
+    hideAllScreens();
     els.resultsScreen.classList.remove("hidden");
+    els.topbar.classList.add("home-mode");
+    els.backBtn.classList.remove("hidden");
+
     const pct = Math.round((score / sessionSize) * 100);
-    els.resultsTitle.textContent = "סיימת את " + CHAPTERS[currentChapter].title + "! 🎉";
+    const chapterTitle = currentSubject.chapters[currentChapter].title;
+    els.resultsTitle.textContent = "סיימת את " + chapterTitle + "! 🎉";
     els.finalScore.textContent = score + " / " + sessionSize + "  (" + pct + "%)";
     els.finalMsg.textContent = encouragement(pct);
 
-    const nextIdx = firstIncompleteChapter();
+    const nextIdx = firstIncompleteChapter(currentSubject);
     if (nextIdx !== -1) {
-      els.nextChapterBtn.textContent = "לפרק הבא ← (" + CHAPTERS[nextIdx].title + ")";
+      els.nextChapterBtn.textContent =
+        "לפרק הבא ← (" + currentSubject.chapters[nextIdx].title + ")";
       els.nextChapterBtn.dataset.next = String(nextIdx);
       els.nextChapterBtn.classList.remove("hidden");
     } else {
@@ -338,8 +441,22 @@
   }
 
   els.nextBtn.addEventListener("click", nextQuestion);
-  els.restartBtn.addEventListener("click", showHome);
-  els.playAgain.addEventListener("click", showHome);
+  els.playAgain.addEventListener("click", function () {
+    if (currentSubject) showChapters(currentSubject);
+    else showSubjects();
+  });
+
+  els.backBtn.addEventListener("click", function () {
+    if (currentScreen === "chapters") {
+      showSubjects();
+    } else if (currentScreen === "quiz") {
+      if (confirm("לצאת מהפרק? ההתקדמות בפרק הזה לא תישמר.")) {
+        showChapters(currentSubject);
+      }
+    } else if (currentScreen === "results") {
+      showChapters(currentSubject);
+    }
+  });
 
   els.nextChapterBtn.addEventListener("click", function () {
     const next = parseInt(els.nextChapterBtn.dataset.next, 10);
@@ -347,8 +464,9 @@
   });
 
   els.resetBtn.addEventListener("click", function () {
-    if (confirm("לאפס את כל ההתקדמות? כל הפרקים יסומנו כלא הושלמו.")) {
-      clearProgress();
+    if (!currentSubject) return;
+    if (confirm("לאפס את ההתקדמות בנושא \"" + currentSubject.title + "\"?")) {
+      clearSubjectProgress(currentSubject.id);
       renderChapterList();
     }
   });
@@ -369,5 +487,5 @@
   }, { once: true });
 
   refreshMuteBtn();
-  showHome();
+  showSubjects();
 })();

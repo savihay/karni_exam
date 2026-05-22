@@ -14,10 +14,10 @@
   <div id="app">
     <header class="topbar">
       <div class="topbar-row">
-        <h1>יחסי מילים</h1>
+        <button id="back-btn" class="icon-btn hidden" title="חזור" aria-label="חזור">→</button>
+        <h1 id="topbar-title">תרגול מחוננים</h1>
         <div class="topbar-actions">
           <button id="mute-btn" class="icon-btn" title="השתק / הפעל סאונד" aria-label="השתק / הפעל סאונד">🔊</button>
-          <button id="restart-btn" class="icon-btn" title="התחל מחדש" aria-label="התחל מחדש">↻</button>
         </div>
       </div>
       <div class="stats">
@@ -27,9 +27,18 @@
       <div class="progress-bar"><div id="progress-fill"></div></div>
     </header>
 
-    <section id="home-screen">
+    <section id="subjects-screen">
       <div class="card home">
-        <h2>יחסי מילים</h2>
+        <h2>בחר נושא לתרגול</h2>
+        <p class="home-sub">לקראת שלב ב׳ של מבחני המחוננים — כיתות ג׳</p>
+        <div id="subject-list" class="subject-list"></div>
+        <div class="home-coming">נושאים נוספים יתווספו בקרוב…</div>
+      </div>
+    </section>
+
+    <section id="home-screen" class="hidden">
+      <div class="card home">
+        <h2 id="chapters-title">יחסי מילים</h2>
         <p class="home-sub">בחר פרק להתחלה. בכל פרק 10 שאלות.</p>
         <div id="chapter-list" class="chapter-list"></div>
         <div class="home-footer">
